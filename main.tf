@@ -46,9 +46,3 @@ resource "aws_instance" "blog" {
     Name = "HelloWorld"
   }
 }
-
-# Тип инстанса как переменная
-variable "instance_type" {
-  description = "Type of EC2 instance to provision"
-  default     = "t3.nano"
-}
