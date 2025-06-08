@@ -88,6 +88,7 @@ module "blog_alb" {
   }
 }
 
+# Auto Scaling Group
 module "autoscaling" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "8.3.0"
@@ -99,7 +100,7 @@ module "autoscaling" {
   vpc_zone_identifier = module.blog_vpc.public_subnets
   security_groups     = [module.blog_sg.security_group_id]
 
-  # Launch template
+  # Launch template configuration
   launch_template_name        = "blog-launch-template"
   launch_template_description = "Launch template for blog application"
   update_default_version      = true
@@ -107,11 +108,14 @@ module "autoscaling" {
   image_id      = data.aws_ami.app_ami.id
   instance_type = var.instance_type
 
-  # Target groups
-  target_group_arns = module.blog_alb.target_group_arns
-
   tags = {
     Terraform   = "true"
     Environment = "dev"
   }
+}
+
+# Явное присоединение Target Group к Auto Scaling Group
+resource "aws_autoscaling_attachment" "blog_asg_attachment" {
+  autoscaling_group_name = module.autoscaling.autoscaling_group_name
+  lb_target_group_arn   = module.blog_alb.target_group_arns[0]
 }
