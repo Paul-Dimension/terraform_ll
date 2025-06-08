@@ -73,31 +73,34 @@ module "alb" {
   vpc_id  = module.blog_vpc.vpc_id
   subnets = module.blog_vpc.public_subnets
 
-  security_groups = [module.blog_sg.security_group_id]
+  security_groups     = [module.blog_sg.security_group_id]
+  load_balancer_type  = "application"
+  internal            = false
 
-  load_balancer_type = "application"
-  internal           = false
-
+  # Target group
   target_groups = {
-    ex-instance = {
-      name_prefix   = "blog"
+    blog-instance = {
+      name_prefix      = "blog"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"
-      targets = [{
-        target_id = aws_instance.blog.id
-        port      = 80
-      }]
+      targets = [
+        {
+          id   = aws_instance.blog.id
+          port = 80
+        }
+      ]
     }
   }
 
+  # Listener
   listeners = {
     http = {
       port     = 80
       protocol = "HTTP"
       default_action = {
         type             = "forward"
-        target_group_key = "ex-instance"
+        target_group_key = "blog-instance"
       }
     }
   }
