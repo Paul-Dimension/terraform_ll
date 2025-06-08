@@ -67,43 +67,40 @@ resource "aws_instance" "blog" {
 # ALB (Application Load Balancer)
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
-  version = "9.9.0"
+  version = "~> 8.0" # Используем более стабильную версию
 
   name    = "blog-alb"
   vpc_id  = module.blog_vpc.vpc_id
   subnets = module.blog_vpc.public_subnets
 
-  security_groups     = [module.blog_sg.security_group_id]
-  load_balancer_type  = "application"
-  internal            = false
+  security_groups    = [module.blog_sg.security_group_id]
+  load_balancer_type = "application"
+  internal           = false
+
+  # HTTP listener
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+    }
+  ]
 
   # Target group
-  target_groups = {
-    blog-instance = {
-      name_prefix      = "blog"
+  target_groups = [
+    {
+      name_prefix      = "blog-"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"
-      targets = [
-        {
-          id   = aws_instance.blog.id
-          port = 80
+      targets = {
+        my_target = {
+          target_id = aws_instance.blog.id
+          port      = 80
         }
-      ]
-    }
-  }
-
-  # Listener
-  listeners = {
-    http = {
-      port     = 80
-      protocol = "HTTP"
-      default_action = {
-        type             = "forward"
-        target_group_key = "blog-instance"
       }
     }
-  }
+  ]
 
   tags = {
     Name = "blog-alb"
